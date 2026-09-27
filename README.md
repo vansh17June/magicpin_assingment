@@ -42,7 +42,13 @@ Create a Gemini API key in Google AI Studio. Since a key was pasted into chat, r
 
 With no key, the bot uses rules only. When configured, the API sends composed message drafts—including names, prices, or dates included in the draft—to the selected model provider. Check the provider's free-tier quotas, availability, and terms; free usage is not guaranteed. AI failures return HTTP 503 rather than silently claiming an AI-generated result. At most three AI rewrites are made per tick to stay within the judge's response-time budget.
 
-To generate a model-rewritten JSONL submission explicitly, run `python build_submission.py --use-ai` after configuring the key. This sends each of the 30 drafts to the provider and may consume quota.
+To verify that the configured key can access the chosen Gemini model, run:
+
+```powershell
+python check_gemini.py
+```
+
+If model lookup succeeds, generate a model-rewritten JSONL submission with `python build_submission.py --use-ai`. This sends each of the 30 drafts to the provider and may consume quota. Use `VERA_GEMINI_MODEL` to choose a model returned by the key lookup that supports `generateContent`.
 
 ## Approach and tradeoffs
 

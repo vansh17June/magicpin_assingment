@@ -10,6 +10,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import quote
 from collections import Counter
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -85,7 +86,7 @@ def _model_rewrite(
     if provider == "gemini":
         endpoint = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
-            f"{model}:generateContent"
+            f"{quote(model.removeprefix('models/'), safe='-._')}:generateContent"
         )
         request_body = {
             "systemInstruction": {"parts": [{"text": system_prompt}]},
@@ -129,7 +130,18 @@ def _model_rewrite(
         with urllib.request.urlopen(request, timeout=AI_TIMEOUT_SECONDS) as response:
             result = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        raise RuntimeError(f"Configured AI model request failed with HTTP {exc.code}") from exc
+        details = ""
+        try:
+            error_data = json.loads(exc.read(4096).decode("utf-8"))
+            details = _text(_mapping(error_data.get("error")).get("message"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            details = ""
+        if details and api_key in details:
+            details = details.replace(api_key, "[redacted]")
+        reason = f": {details}" if details else ""
+        raise RuntimeError(
+            f"Configured {provider} model '{model}' request failed with HTTP {exc.code}{reason}"
+        ) from exc
     except urllib.error.URLError as exc:
         raise RuntimeError("Could not reach the configured AI model endpoint") from exc
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:

@@ -106,7 +106,11 @@ class VeraBotTests(unittest.TestCase):
             return fake_urlopen
 
         rewrite = lambda body: body.replace("For your Dentists:", "For your dental practice:")
-        with patch.dict(os.environ, {"VERA_GEMINI_API_KEY": "test-key"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"VERA_GEMINI_API_KEY": "test-key", "VERA_GEMINI_MODEL": "models/gemini-test"},
+            clear=True,
+        ):
             with patch("urllib.request.urlopen", response_for(rewrite)):
                 ai_message = bot.compose(category, merchant, trigger)
             self.assertNotEqual(ai_message["body"], baseline["body"])
